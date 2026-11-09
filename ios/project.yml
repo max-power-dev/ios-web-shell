@@ -1,5 +1,6 @@
-# XcodeGen 2.46.0 spec. CI builds this unsigned with a placeholder bundle ID.
+# XcodeGen 2.46.0 spec. CI builds this unsigned with placeholder bundle IDs.
 # The real bundle ID, display name and version are applied after the build, at re-sign time.
+# Two flavors: Shell (release) and ShellDev (dev, compiled with DEV_FLAVOR).
 name: Shell
 options:
   deploymentTarget:
@@ -10,17 +11,43 @@ targets:
     platform: iOS
     sources:
       - path: Sources
+      - path: Assets.xcassets
     scheme: {}
     info:
       path: Generated/Shell-Info.plist
       properties:
         CFBundleDisplayName: Shell
-        UILaunchScreen: {}
+        UILaunchScreen:
+          UIColorName: LaunchBackground
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: invalid.unsigned.shell
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_VERSION: "5"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGNING_ALLOWED: "NO"
+  ShellDev:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      - path: Assets.xcassets
+    scheme: {}
+    info:
+      path: Generated/ShellDev-Info.plist
+      properties:
+        CFBundleDisplayName: Shell Dev
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: invalid.unsigned.shell.dev
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DEV_FLAVOR"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SWIFT_VERSION: "5"
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGNING_ALLOWED: "NO"

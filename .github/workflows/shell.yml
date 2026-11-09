@@ -16,6 +16,8 @@ jobs:
         include:
           - flavor: release
             scheme: Shell
+          - flavor: dev
+            scheme: ShellDev
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer   # pinned, never floats to a newer Xcode
     steps:
@@ -43,6 +45,8 @@ jobs:
           APP="build/Build/Products/Release-iphoneos/${{ matrix.scheme }}.app"
           test -d "$APP"
           plutil -p "$APP/Info.plist"
+          test -f "$APP/Assets.car" || { echo "no Assets.car in $APP"; exit 1; }
+          plutil -extract CFBundleIcons json -o - "$APP/Info.plist"
           echo "MinimumOSVersion: $(plutil -extract MinimumOSVersion raw -o - "$APP/Info.plist")"
           if [ -d "$APP/Frameworks" ]; then ls -la "$APP/Frameworks"; fi
           tar -C "$(dirname "$APP")" -cf "shell-${{ matrix.flavor }}.tar" "$(basename "$APP")"
