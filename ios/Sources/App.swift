@@ -7,14 +7,20 @@ import WebKit
 @main
 final class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
+    let soakLog = SoakLogStore()
 
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        soakLog.append(SoakEntry.make(kind: "launch"))
         let window = UIWindow(frame: UIScreen.main.bounds)
-        window.rootViewController = WebViewController()
+        window.rootViewController = UINavigationController(rootViewController: SoakLogViewController(store: soakLog))
         window.makeKeyAndVisible()
         self.window = window
         return true
+    }
+
+    func applicationWillEnterForeground(_ application: UIApplication) {
+        soakLog.append(SoakEntry.make(kind: "resume"))
     }
 }
 
