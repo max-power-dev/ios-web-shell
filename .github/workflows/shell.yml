@@ -1,0 +1,55 @@
+# Unsigned, content-free shell build. No secrets are read and nothing from outside this repo
+# is printed. Identity (bundle ID, signing) is applied later, off CI.
+name: shell
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        include:
+          - flavor: release
+            scheme: Shell
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer   # pinned, never floats to a newer Xcode
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: XcodeGen 2.46.0
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/xcodegen.zip" https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.zip
+          echo "4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806  $RUNNER_TEMP/xcodegen.zip" | shasum -a 256 -c -
+          unzip -l "$RUNNER_TEMP/xcodegen.zip"
+          unzip -q "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP"
+          "$RUNNER_TEMP/xcodegen/bin/xcodegen" generate --spec ios/project.yml
+      - name: Build unsigned
+        run: |
+          xcodebuild -version
+          xcodebuild -project ios/Shell.xcodeproj -scheme "${{ matrix.scheme }}" \
+            -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" ARCHS=arm64
+      - name: Inspect and pack
+        env:
+          COPYFILE_DISABLE: "1"
+        run: |
+          APP="build/Build/Products/Release-iphoneos/${{ matrix.scheme }}.app"
+          test -d "$APP"
+          plutil -p "$APP/Info.plist"
+          echo "MinimumOSVersion: $(plutil -extract MinimumOSVersion raw -o - "$APP/Info.plist")"
+          if [ -d "$APP/Frameworks" ]; then ls -la "$APP/Frameworks"; fi
+          tar -C "$(dirname "$APP")" -cf "shell-${{ matrix.flavor }}.tar" "$(basename "$APP")"
+          tar -tf "shell-${{ matrix.flavor }}.tar"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: shell-${{ matrix.flavor }}
+          path: shell-${{ matrix.flavor }}.tar
+          retention-days: 1
+          if-no-files-found: error

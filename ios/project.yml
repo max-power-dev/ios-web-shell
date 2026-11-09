@@ -1,0 +1,26 @@
+# XcodeGen 2.46.0 spec. CI builds this unsigned with a placeholder bundle ID.
+# The real bundle ID, display name and version are applied after the build, at re-sign time.
+name: Shell
+options:
+  deploymentTarget:
+    iOS: "16.0"
+targets:
+  Shell:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+    scheme: {}
+    info:
+      path: Generated/Shell-Info.plist
+      properties:
+        CFBundleDisplayName: Shell
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: invalid.unsigned.shell
+        SWIFT_VERSION: "5"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGNING_ALLOWED: "NO"
