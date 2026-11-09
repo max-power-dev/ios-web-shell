@@ -3,6 +3,7 @@
 // Swift language mode 5, iOS 16.0.
 import UIKit
 import WebKit
+import os
 
 @main
 final class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -12,6 +13,12 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         soakLog.append(SoakEntry.make(kind: "launch"))
+        #if DEV_FLAVOR
+        // Dev builds only. Logged so the optimizer keeps the string, the release binary must lack it.
+        let testModeMarker = "__shell_test_mode__"
+        Logger(subsystem: Bundle.main.bundleIdentifier ?? "shell", category: "spike")
+            .log("\(testModeMarker, privacy: .public)")
+        #endif
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UINavigationController(rootViewController: SoakLogViewController(store: soakLog))
         window.makeKeyAndVisible()
@@ -29,14 +36,22 @@ final class WebViewController: UIViewController, WKNavigationDelegate {
     static let entry = URL(string: "shellres://local/index.html")!
 
     private var webView: WKWebView!
+    private let bridge = Bridge()
 
     override func loadView() {
         let config = WKWebViewConfiguration()
         // Must be registered before the web view exists, and only once per scheme.
         let root = Bundle.main.bundleURL.appendingPathComponent("www", isDirectory: true)
         config.setURLSchemeHandler(SchemeHandler(root: root), forURLScheme: Self.scheme)
+        config.userContentController.addScriptMessageHandler(bridge, contentWorld: .page, name: "native")
         webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = self
+        bridge.webView = webView
+        #if DEV_FLAVOR
+        if #available(iOS 16.4, *) {
+            webView.isInspectable = true
+        }
+        #endif
         view = webView
     }
 
@@ -47,6 +62,8 @@ final class WebViewController: UIViewController, WKNavigationDelegate {
 
     // The web content process can be killed under memory pressure while the app lives on.
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        let defaults = UserDefaults.standard
+        defaults.set(defaults.integer(forKey: Bridge.terminationCountKey) + 1, forKey: Bridge.terminationCountKey)
         webView.load(URLRequest(url: Self.entry))
     }
 }

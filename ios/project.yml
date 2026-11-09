@@ -21,6 +21,7 @@ targets:
           UIColorName: LaunchBackground
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        NSMotionUsageDescription: Zum Testen der Bewegungssensoren.
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: invalid.unsigned.shell
@@ -43,6 +44,7 @@ targets:
           UIColorName: LaunchBackground
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        NSMotionUsageDescription: Zum Testen der Bewegungssensoren.
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: invalid.unsigned.shell.dev
